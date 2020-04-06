@@ -15,7 +15,7 @@ const connection = mysql.createConnection({
 
 connection.connect(err => {
     if (err) throw err;
-    console.log('working');
+    // console.log('working');
 
 });
 
@@ -44,7 +44,7 @@ function initialize() {
                 ]
             }
         ]).then(answer => {
-            console.log(answer)
+            // console.log(answer)
             switch (answer.action) {
                 case 'Add new Department.':
                     // console.log('this works');
@@ -63,7 +63,7 @@ function initialize() {
                 case 'Add an employee.':
                     addEmployee();
                     break;
-                case 'View Employees.':
+                case 'View employees.':
                     viewEmployees();
                     break;
                 case 'Update Employees.':
@@ -163,11 +163,69 @@ function addRole() {
 };
 
 function viewDepartment() {
-
+    
+    let departments = [];
+    
+    connection.query(
+        'SELECT * FROM department',
+        (err,depResults) => {
+            if (err) throw err;
+            // console.log(depResults)
+            departments = depResults.map(e => e.name)
+            console.log('Here are the current departments:')
+            for (let i= 0; i<departments.length; i++) {
+                console.log(departments[i])
+            }
+            initialize();
+        }
+    )
 };
 
 function viewRoles() {
 
+    let departmentsToSearchRoles = [];
+
+    connection.query(
+        'SELECT name, id FROM department',
+        (err, result) => {
+            if (err) throw err;
+            // console.log(result)
+            departmentsToSearchRoles = result.map(e => e.name);
+
+            inquirer.prompt(
+                [{
+                    message: 'View the roles for which department?',
+                    type: 'list',
+                    name: 'departmentToViewRoles',
+                    choices: departmentsToSearchRoles
+                }]
+            ).then(result => {
+                const department = result.departmentToViewRoles;
+                // console.log(department);
+                connection.query(
+                    'SELECT id FROM department WHERE ?',
+                    {
+                        name: department
+                    },
+                    (err,depId) => {
+                        if (err) throw err;
+                        connection.query(
+                            'SELECT title FROM role WHERE department_id = ?',
+                            depId[0].id,
+                            (err,roles) => {
+                                if (err) throw err;
+                                console.log(`Here are the roles within the ${department} department:`);
+                                for (let i=0; i<roles.length; i++) {
+                                    console.log(roles[i].title)
+                                }
+                                initialize();
+                            }
+                        )
+                    }
+                )
+            })
+        }
+    )
 };
 
 // SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
@@ -291,6 +349,17 @@ function addEmployee() {
 
 function viewEmployees() {
 
+    connection.query(
+        'SELECT * FROM employee',
+        (err,result) => {
+            if (err) throw err;
+            console.log('All current employees:');
+            for (let i=0; i<result.length;i++) {
+                console.log(`ID: ${result[i].id} | Name: ${result[i].last_name}, ${result[i].first_name}`)
+            }
+            initialize();
+        }
+    )
 };
 
 function updateEmployee() {
