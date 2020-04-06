@@ -217,112 +217,76 @@ function addEmployee() {
                     const department = answersDpt.employeeDepartment;
 
                     connection.query(
-                        
+
                         'SELECT id FROM department WHERE ?',
                         {
                             name: department
                         },
-                        (err,depId) => {
+                        (err, depId) => {
                             if (err) throw err;
-                            console.log('WE ARE GETTING HERE')
-                            console.log(depId);
-
                             connection.query(
+                                'select role.title, role.id FROM role WHERE role.department_id = ?',
+                                depId[0].id,
+                                (err, roleInfo) => {
+                                    if (err) throw err;
+                                    console.log(roleInfo)
+                                    // roleId = roleInfo.id;
+                                    // console.log(roleId)
+                                    roles = roleInfo.map(e => e.title)
+                                    console.log(roles);
+                                    inquirer.
+                                        prompt(
+                                            [{
+                                                name: 'employeeRole',
+                                                type: 'list',
+                                                message: "What is this person's role?",
+                                                choices: roles
+                                            }]
+                                        ).then(
+                                            theirRole => {
+                                                // console.log(theirRole)
+                                                const theirRoleTitle = theirRole.employeeRole
+                                                //need to add employee to the database of employees now
+                                                // console.log(theirRoleTitle)
+                                                connection.query(
+                                                    'SELECT id FROM role WHERE ?',
+                                                    {
+                                                        title: theirRoleTitle
+                                                    },
+                                                    (err, resultRoleId) => {
+                                                        if (err) throw err;
+                                                        // console.log(resultRoleId)
 
+                                                        // still need to address the manager ID issue
+
+                                                        connection.query(
+                                                            'INSERT INTO employee SET ?',
+                                                            {
+                                                                first_name: answersDpt.firstName,
+                                                                last_name: answersDpt.lastName,
+                                                                role_id: resultRoleId[0].id,
+                                                                manager_id: 9999
+                                                            },
+                                                            (err, results) => {
+                                                                if (err) throw err;
+                                                                console.log(results);
+                                                                initialize();
+                                                            }
+                                                        )
+                                                    }
+                                                )
+
+
+                                            }
+                                        )
+                                }
                             )
                         }
                     )
-
-
-
-                    connection.query(
-                        'SELECT role.title, role.id, ? FROM role INNER JOIN role ON department.id=role.department_id',
-                        {
-                            name: department
-                        },
-                        (err, result) => {
-                            if (err) throw err;
-
-                            // console.log(result)
-
-                        }
-                    )
                 }
-
-
-
-                    // answers => {
-                    //     const department = answers.department_name;
-                    //     connection.query(
-                    //         'SELECT id FROM department WHERE ?',
-                    //         {
-                    //             name: department
-                    //         },
-                    //         (err, dep) => {
-                    //             console.log(dep)
-                    //             if (err) throw err;
-                    //             connection.query(
-                    //                 'INSERT INTO role SET ?',
-                    //                 {
-                    //                     title: answers.roleName,
-                    //                     salary: answers.roleSalary,
-                    //                     department_id: dep[0].id
-                    //                 }
-                    //             )
-                    //         }
-                    //     )
-                    // }
                 )
 
         })
-
-
-
-
-    connection.query(
-        'SELECT role.id, role.title, employee.last_name FROM role INNER JOIN employee ON role.id=employee.role_id',
-        (err, result) => {
-            if (err) throw err;
-
-            // console.log(result)
-
-            roles = result.map(e => e.title)
-
-
-
-            // inquirer.
-            //     prompt(
-            //         [{
-            //             message: 'First name?',
-            //             type: 'input',
-            //             name: 'firstName'
-            //         },
-            //         {
-            //             message: 'Last name?',
-            //             type: 'input',
-            //             name: 'lastName'
-            //         },
-            //         {
-            //             message: "What department is this person in?",
-            //             type: 'list',
-            //             name: 'employeeDepartment',
-            //             choices: departments
-            //         },
-            //         {
-            //             message: "What is this person's role?",
-            //             type: 'list',
-            //             name: 'employeeRole',
-            //             choices: roles
-            //         },
-            //         {
-            //             message: "who is this person's manager?",
-            //             type: 'list',
-            //             name: 'employeeMgr',
-            //             choices: managers
-            //         }]
-            //     )
-        }
-    )
 };
 
 function viewEmployees() {
