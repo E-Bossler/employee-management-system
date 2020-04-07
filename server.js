@@ -19,10 +19,6 @@ connection.connect(err => {
 
 });
 
-// GLOBAL VARIABLES 
-
-
-
 // GLOBAL FUNCTIONS
 
 function initialize() {
@@ -66,16 +62,14 @@ function initialize() {
                 case 'View employees.':
                     viewEmployees();
                     break;
-                case 'Update Employees.':
+                case 'Update employees.':
                     updateEmployee();
                     break;
                 case 'Exit Program.':
-                    break;
+                    process.exit();
             }
         })
 }
-
-// GLOBAL FUNCTIONS
 
 function addADepartment() {
     inquirer.prompt(
@@ -228,12 +222,6 @@ function viewRoles() {
     )
 };
 
-// SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
-// FROM Orders
-// INNER JOIN Customers
-// ON Orders.CustomerID=Customers.CustomerID;
-
-
 function addEmployee() {
 
     let roles = [];
@@ -363,6 +351,84 @@ function viewEmployees() {
 };
 
 function updateEmployee() {
+    
+    connection.query(
+        'SELECT * FROM employee',
+        (err,resultEmp) => {
+            if (err) throw err;
+            let employeesToEdit = [];
+            employeesToEdit = resultEmp.map(e=>{
+                return {
+                    id: e.id,
+                    full_Name: `${e.first_name} ${e.last_name}`
+                }
+            })
+            // console.log(employeesToEdit)
+            inquirer.
+                prompt(
+                    [{
+                        message: 'Which employee are we editing?',
+                        name: 'editEmployee',
+                        type: 'list',
+                        choices: employeesToEdit.map(e=> e.full_Name)
+                    }]
+                ).then(
+                    result => {
+                        const employee = result.editEmployee;
+                        // console.log(employee)
+                        console.log(employee);
+
+                        employeeObj = employeesToEdit.filter(e=> e.full_Name === employee);
+                        console.log(employeeObj)
+                        const employeeId = employeeObj[0].id
+
+                        connection.query(
+                            'SELECT * FROM role',
+                            (err,resultDep) => {
+                                if (err) throw err;
+                                roles = resultDep.map(e => {
+                                    return {
+                                        id: e.id,
+                                        roleTitle: e.title 
+                                    }
+                                })
+
+                                inquirer.prompt(
+                                    [{
+                                        message: "What is this person's new role?",
+                                        name: 'newRole',
+                                        type: 'list',
+                                        choices: roles.map(e=> e.roleTitle)
+                                    }]
+                                ).then(
+                                    resultNewRole => {
+                                        
+                                        roleObj = roles.filter(e=> e.roleTitle === resultNewRole.newRole)
+                                        
+                                        
+                                        console.log(roleObj)
+                                        connection.query(
+                                            'UPDATE employee SET ? WHERE ?',
+                                            [{
+                                                role_id: roleObj[0].id,
+                                            },
+                                            {
+                                                id: employeeId
+                                            }],
+                                            (err,resultUpdate) => {
+                                                if (err) throw err;
+                                                console.log(resultUpdate);
+                                            }
+                                        )
+                                        initialize();
+                                    }
+                                )
+                            }
+                        )
+                    }
+                )
+        }
+    )
 
 };
 
